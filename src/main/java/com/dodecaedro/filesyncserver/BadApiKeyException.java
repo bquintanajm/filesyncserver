@@ -1,4 +1,4 @@
-package com.dodecaedro.filesyncserver.exception;
+package com.dodecaedro.filesyncserver;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;

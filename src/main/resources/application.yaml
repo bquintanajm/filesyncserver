@@ -12,6 +12,10 @@ server:
    key-alias: keystore
  port: 8443
 
+spring:
+  jackson:
+    default-property-inclusion: NON_NULL
+
 logging:
   level:
-    com.dodecaedro: INFO
+    com.dodecaedro: TRACE

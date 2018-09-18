@@ -3,17 +3,15 @@ package com.dodecaedro.filesyncserver;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
 
-import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
 @ConfigurationProperties(prefix = "application")
 @Validated
 public class FileSyncProperties {
-  @NotBlank
+  @NotNull
   private String key;
   @NotNull
   private String filePath;
-  @NotNull String fileName;
 
   public String getKey() {
     return key;
@@ -29,13 +27,5 @@ public class FileSyncProperties {
 
   public void setFilePath(String filePath) {
     this.filePath = filePath;
-  }
-
-  public String getFileName() {
-    return fileName;
-  }
-
-  public void setFileName(String fileName) {
-    this.fileName = fileName;
   }
 }

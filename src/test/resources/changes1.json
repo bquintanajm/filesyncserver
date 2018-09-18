@@ -1,0 +1,71 @@
+{
+  "last_sync_ts": 1537113620,
+  "time_delta_ms": 97833.5,
+  "changes": {
+    "items": [
+      {
+        "id": "C8ED885585334715BB6F7A4754455F23",
+        "sync_id": "C8ED885585334715BB6F7A4754455F23",
+        "changed_ts": 1537113630,
+        "tags_changed_ts": null,
+        "title": "test-done",
+        "title_ts": 1537113636,
+        "type": "a",
+        "list": "i",
+        "created_on": 1537113636,
+        "is_focused": 0,
+        "is_focused_ts": 0,
+        "completed_on": 1537113637,
+        "completed_on_ts": 1537113637,
+        "is_existing_item": true
+      },
+      {
+        "id": "C8ED885585334715BB6F7A4754455F24",
+        "sync_id": "C8ED885585334715BB6F7A4754455F24",
+        "changed_ts": 1537113631,
+        "title": "test-newer-1",
+        "title_ts": 1537113636,
+        "type": "a",
+        "list": "i",
+        "created_on": 1537113636,
+        "is_focused": 0,
+        "is_focused_ts": 0,
+        "completed_on": 1537113637,
+        "completed_on_ts": 1537113637,
+        "is_existing_item": true
+      },
+      {
+        "id": "C8ED885585334715BB6F7A4754455F25",
+        "sync_id": "C8ED885585334715BB6F7A4754455F25",
+        "changed_ts": 1537113621,
+        "title": "test-older-1",
+        "title_ts": 1537113636,
+        "type": "a",
+        "list": "i",
+        "created_on": 1537113636,
+        "is_focused": 0,
+        "is_focused_ts": 0,
+        "completed_on": 1537113637,
+        "completed_on_ts": 1537113637,
+        "is_existing_item": true
+      },
+      {
+        "id": "C8ED885585334715BB6F7A4754455F26",
+        "sync_id": "C8ED885585334715BB6F7A4754455F26",
+        "changed_ts": 1537113631,
+        "title": "test-new-1",
+        "title_ts": 1537113636,
+        "type": "a",
+        "list": "i",
+        "created_on": 1537113636,
+        "is_focused": 0,
+        "is_focused_ts": 0,
+        "completed_on": 1537113637,
+        "completed_on_ts": 1537113637,
+        "is_existing_item": false
+      }
+    ],
+    "tags": [],
+    "deletions": []
+  }
+}
