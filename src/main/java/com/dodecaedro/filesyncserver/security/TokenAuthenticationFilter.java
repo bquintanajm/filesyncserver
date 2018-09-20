@@ -16,6 +16,10 @@ public class TokenAuthenticationFilter extends GenericFilterBean {
   public void doFilter(ServletRequest request, ServletResponse response,
                        FilterChain filterChain) throws IOException, ServletException {
 
+    /*
+    authentication tokens should *NEVER* be passed in query parameters. see:
+    https://tools.ietf.org/html/rfc6750#section-5.3
+     */
     String token = request.getParameter("key");
     AuthenticationToken authenticationToken = new AuthenticationToken(token);
     SecurityContextHolder.getContext().setAuthentication(authenticationToken);
