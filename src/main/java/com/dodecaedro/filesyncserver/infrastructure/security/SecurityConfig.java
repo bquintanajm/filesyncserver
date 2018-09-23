@@ -1,4 +1,4 @@
-package com.dodecaedro.filesyncserver.security;
+package com.dodecaedro.filesyncserver.infrastructure.security;
 
 import com.dodecaedro.filesyncserver.FileSyncProperties;
 import org.springframework.context.annotation.Bean;
@@ -7,7 +7,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
-import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 

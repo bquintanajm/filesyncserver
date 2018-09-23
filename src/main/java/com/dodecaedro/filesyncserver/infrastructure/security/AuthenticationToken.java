@@ -1,4 +1,4 @@
-package com.dodecaedro.filesyncserver.security;
+package com.dodecaedro.filesyncserver.infrastructure.security;
 
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 

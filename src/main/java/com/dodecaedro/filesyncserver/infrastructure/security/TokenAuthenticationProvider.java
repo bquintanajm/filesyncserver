@@ -1,4 +1,4 @@
-package com.dodecaedro.filesyncserver.security;
+package com.dodecaedro.filesyncserver.infrastructure.security;
 
 import com.dodecaedro.filesyncserver.FileSyncProperties;
 import lombok.extern.slf4j.Slf4j;
