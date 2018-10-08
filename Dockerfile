@@ -1,4 +1,4 @@
-FROM openjdk:10-jre-slim
+FROM adoptopenjdk/openjdk11-openj9:jdk-11.28-alpine-slim
 
 VOLUME /tmp
 ARG JAR_FILE
