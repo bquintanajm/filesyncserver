@@ -15,3 +15,7 @@ server:
 logging:
   level:
     com.dodecaedro: INFO
+
+spring:
+  jmx:
+    enabled: false
