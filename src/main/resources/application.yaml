@@ -13,7 +13,7 @@ server:
  port: 8443
  compression:
    enabled: true
-   min-response-size: 1K
+   min-response-size: 1KB
 
 logging:
   level:
