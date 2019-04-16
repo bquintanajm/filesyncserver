@@ -12,7 +12,6 @@ import static org.springframework.web.servlet.function.RouterFunctions.route;
 
 @SpringBootApplication
 @EnableWebSecurity
-@EnableConfigurationProperties
 public class FileSyncApplication {
   public static void main(String[] args) {
     SpringApplication.run(FileSyncApplication.class, args);
