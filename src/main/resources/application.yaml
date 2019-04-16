@@ -20,5 +20,5 @@ logging:
     com.dodecaedro: INFO
 
 spring:
-  jmx:
-    enabled: false
+  main:
+    lazy-initialization: true

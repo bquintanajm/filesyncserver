@@ -11,6 +11,7 @@ import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -89,7 +90,7 @@ public class FileStorageService {
     saveFile(contextDB.jsonString());
 
     response.setSuccess(true);
-    response.setSyncTs(System.currentTimeMillis());
+    response.setSyncTs(Instant.now().getEpochSecond());
     log.debug("Sync sucessful at: {}", response.getSyncTs());
 
     return response;
