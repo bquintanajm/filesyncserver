@@ -48,7 +48,7 @@ public class FileSyncHandler {
 
     return ok()
       .contentType(MediaType.APPLICATION_JSON)
-      .body("{\"server_time_ms\": " + System.currentTimeMillis() + " }");
+      .body("{\"server_time_ms\": " + Instant.now().getEpochSecond() + " }");
   }
 
   ServerResponse handleSyncJson(ServerRequest serverRequest) throws Exception {
