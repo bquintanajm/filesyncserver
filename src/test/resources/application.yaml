@@ -1,6 +1,6 @@
 application:
   key: ABCDEF
-  file-path: /data
+  file-path:
   file-name: file
 
 server:

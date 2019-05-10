@@ -1,4 +1,4 @@
-FROM adoptopenjdk/openjdk11-openj9:jdk-11.0.2.9_openj9-0.12.1-alpine-slim as build
+FROM adoptopenjdk/openjdk11-openj9:jdk-11.0.3_7_openj9-0.14.0-alpine-slim as build
 WORKDIR /workspace/app
 
 COPY mvnw .
@@ -9,7 +9,7 @@ COPY src src
 RUN ./mvnw install -DskipTests
 RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
-FROM adoptopenjdk/openjdk11-openj9:jdk-11.0.2.9_openj9-0.12.1-alpine-slim
+FROM adoptopenjdk/openjdk11-openj9:jre-11.0.3_7_openj9-0.14.0-alpine
 VOLUME /tmp
 ARG DEPENDENCY=/workspace/app/target/dependency
 COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib

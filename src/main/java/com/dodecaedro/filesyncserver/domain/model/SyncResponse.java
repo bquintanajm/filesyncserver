@@ -6,6 +6,7 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import javax.json.JsonArray;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -20,11 +21,8 @@ public class SyncResponse {
   long syncTs;
   @JsonProperty("time_delta_ms")
   double timeDelta;
-  @Builder.Default
-  List<Map<String, Object>> items = new ArrayList<>();
-  @Builder.Default
-  List<Map<String, Object>> tags = new ArrayList<>();
+	JsonArray items;
+	JsonArray tags;
   @JsonProperty("deletions_to_add")
-  @Builder.Default
-  List<Map<String, Object>> deletionsToAdd = new ArrayList<>();
+	JsonArray deletionsToAdd;
 }

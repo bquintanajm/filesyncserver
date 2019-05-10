@@ -15,6 +15,8 @@ import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import static com.jayway.jsonpath.Criteria.where;
 import static com.jayway.jsonpath.Filter.filter;
@@ -23,6 +25,9 @@ import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 @Slf4j
 @Service
 public class FileStorageService {
+	private final static TypeRef<List<String>> typeRefString = new TypeRef<>() {};
+	private final static TypeRef<List<Map<String, Object>>> typeRefMap = new TypeRef<>() {};
+
   private final FileSyncProperties properties;
 
   public FileStorageService(FileSyncProperties properties) {
@@ -80,11 +85,11 @@ public class FileStorageService {
 
     SyncResponse response = new SyncResponse();
     // 1. process items
-    response.setItems(processItems(contextChanges, contextDB, lastUpdated));
+    //response.setItems(processItems(contextChanges, contextDB, lastUpdated));
     // 2. process tags
-    response.setTags(processTags(contextChanges, contextDB, lastUpdated));
+    //response.setTags(processTags(contextChanges, contextDB, lastUpdated));
     // 3. process deletions
-    response.setDeletionsToAdd(processDeletions(contextChanges, contextDB, lastUpdated));
+    //response.setDeletionsToAdd(processDeletions(contextChanges, contextDB, lastUpdated));
 
     // 6. save file - todo: the whole file is in memory
     saveFile(contextDB.jsonString());
@@ -98,10 +103,14 @@ public class FileStorageService {
 
   private List<Map<String, Object>> processItems(DocumentContext contextChanges, DocumentContext contextDB, Long lastUpdated) {
     // 1. get ids of elements that may have potentially changed in the db
+		/*
     List<String> changedIds = getStringList(
       contextChanges,
       "$.changes.items[*].id"
     );
+    */
+
+		List<String> changedIds = contextChanges.read("$.changes.items[*].id", List.class);
 
     // 2. get those elements from the db - optimization: get from db only those elements that may have changed, not all
     List<Map<String, Object>> elementsToBeChangedInDB = getMapList(
@@ -109,6 +118,9 @@ public class FileStorageService {
       "$.items[?]",
       filter(where("id").in(changedIds))
     );
+
+		Map<String, Map<String, Object>> itemsById = elementsToBeChangedInDB.stream()
+				.collect(Collectors.toMap(item -> (String)item.get("id"), Function.identity()));
 
     // 3. delete the changes which are older than the same ones currently in db
     elementsToBeChangedInDB.forEach(dbElement -> contextChanges.delete("$.changes.items[?]",
@@ -223,7 +235,7 @@ public class FileStorageService {
 
   private List<Map<String, Object>> getMapList(DocumentContext documentContext, String path) {
     try {
-      return documentContext.read(path, List.class);
+      return documentContext.read(path, typeRefMap);
     } catch (Exception exception) {
       log.debug("cannot read the path: {}", path);
       return Collections.emptyList();
@@ -241,7 +253,7 @@ public class FileStorageService {
 
   private List<String> getStringList(DocumentContext documentContext, String path) {
     try {
-      return documentContext.read(path, List.class);
+      return documentContext.read(path, typeRefString);
     } catch (Exception exception) {
       log.debug("cannot read the path: {}", path);
       return Collections.emptyList();
