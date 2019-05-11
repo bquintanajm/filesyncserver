@@ -1,5 +1,6 @@
 package com.dodecaedro.filesyncserver.infrastructure.controller;
 
+import com.dodecaedro.filesyncserver.domain.model.OptimisticLockingException;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,4 +15,9 @@ public class GlobalDefaultExceptionHandler {
   public void handleFileNotFound() {
     // Nothing to do
   }
+	@ResponseStatus(HttpStatus.CONFLICT)
+	@ExceptionHandler(OptimisticLockingException.class)
+	public void handleOptimisticLocking() {
+		// Nothing to do
+	}
 }

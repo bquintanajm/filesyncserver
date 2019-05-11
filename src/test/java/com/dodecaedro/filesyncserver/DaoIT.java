@@ -28,7 +28,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 public class DaoIT {
 
 	public static GenericContainer mongoContainer = new GenericContainer("mongo:4.1.10")
-			.withEnv()
 			.withExposedPorts(27017);
 
 	@BeforeAll
@@ -45,7 +44,6 @@ public class DaoIT {
 										mongoContainer.getContainerIpAddress(),
 										mongoContainer.getFirstMappedPort()
 								))))
-						.credential()
 						.build());
 
 		MongoDatabase database = mongoClient.getDatabase("mydb");

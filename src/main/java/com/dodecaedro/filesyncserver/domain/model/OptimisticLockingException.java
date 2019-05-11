@@ -1,4 +1,4 @@
-package com.dodecaedro.filesyncserver.infrastructure.service;
+package com.dodecaedro.filesyncserver.domain.model;
 
 public class OptimisticLockingException extends Throwable {
 }

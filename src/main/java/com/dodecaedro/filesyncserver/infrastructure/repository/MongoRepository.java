@@ -3,6 +3,7 @@ package com.dodecaedro.filesyncserver.infrastructure.repository;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
+import com.mongodb.client.model.Indexes;
 import org.bson.Document;
 
 import javax.json.*;
@@ -14,9 +15,9 @@ import static java.util.Objects.requireNonNull;
 
 public class MongoRepository {
 	private final MongoClient mongoClient;
-	private MongoCollection<Document> itemsCollection;
-	private MongoCollection<Document> tagsCollection;
-	private MongoCollection<Document> deletionsCollection;
+	private final MongoCollection<Document> itemsCollection;
+	private final MongoCollection<Document> tagsCollection;
+	private final MongoCollection<Document> deletionsCollection;
 
 	public MongoRepository(MongoClient mongoClient) {
 		this.mongoClient = requireNonNull(mongoClient, "mongo db client cannot be null");
@@ -26,7 +27,7 @@ public class MongoRepository {
 		tagsCollection = database.getCollection("tags");
 		deletionsCollection = database.getCollection("deletion");
 
-
+		itemsCollection.createIndex(Indexes.ascending("id"));
 	}
 
 	public JsonArray findItemsById(List<String> ids) {

@@ -1,5 +1,6 @@
 package com.dodecaedro.filesyncserver.infrastructure.service;
 
+import com.dodecaedro.filesyncserver.domain.model.OptimisticLockingException;
 import com.dodecaedro.filesyncserver.domain.model.SyncResponse;
 import com.dodecaedro.filesyncserver.infrastructure.repository.MongoRepository;
 
