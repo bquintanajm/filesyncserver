@@ -6,7 +6,6 @@ import com.mongodb.ServerAddress;
 import com.mongodb.client.*;
 import com.mongodb.client.model.Indexes;
 import org.bson.Document;
-import org.json.JSONObject;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -16,11 +15,9 @@ import javax.json.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -84,4 +81,5 @@ public class DaoIT {
 				.map(jsonObject -> Document.parse(jsonObject.toString()))
 				.collect(Collectors.toList());
 	}
+
 }

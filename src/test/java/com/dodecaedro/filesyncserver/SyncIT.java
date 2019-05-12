@@ -1,7 +1,6 @@
 package com.dodecaedro.filesyncserver;
 
-import io.restassured.builder.RequestSpecBuilder;
-import io.restassured.specification.RequestSpecification;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
@@ -12,14 +11,50 @@ import static java.net.HttpURLConnection.HTTP_OK;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class SyncIT extends ITBase {
+	@BeforeEach
+	void setUp() throws Exception {
+		when()
+				.post("/wipe")
+			.then().assertThat()
+				.statusCode(HTTP_OK);
+
+		given()
+				.body(ClassLoader.getSystemResourceAsStream("file.json").readAllBytes())
+				.when()
+				.post("/push")
+				.then().assertThat()
+				.statusCode(HTTP_OK);
+	}
+
 	@Test
-	void testSync() {
-		String response = when()
+	void timeEndpoint() {
+		long time = when()
 					.get("/time")
 				.then().assertThat()
 					.statusCode(HTTP_OK)
-					.extract().jsonPath().get("server_time_ms").toString();
+					.extract().jsonPath().getLong("server_time_ms");
 
-		assertThat(Long.valueOf(response)).isBetween(0L, Instant.now().getEpochSecond());
+		assertThat(time).isBetween(0L, Instant.now().getEpochSecond());
+	}
+
+	@Test
+	void pullEndpoint() {
+		String response = when()
+					.post("/pull")
+				.then().assertThat()
+					.statusCode(HTTP_OK)
+					.extract().body().asString();
+
+		assertThat(response).isNotNull();
+	}
+
+	@Test
+	void syncEndpoint() throws Exception {
+		given()
+			.body(ClassLoader.getSystemResourceAsStream("changes.json").readAllBytes())
+		.when()
+			.post("/sync")
+		.then().assertThat()
+			.statusCode(HTTP_OK);
 	}
 }

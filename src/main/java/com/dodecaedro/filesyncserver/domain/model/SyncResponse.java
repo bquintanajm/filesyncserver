@@ -1,15 +1,14 @@
 package com.dodecaedro.filesyncserver.domain.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.node.ArrayNode;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.json.JsonArray;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import javax.json.JsonObject;
 
 @Data
 @Builder

@@ -2,7 +2,6 @@ package com.dodecaedro.filesyncserver;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.web.servlet.function.RouterFunction;
@@ -24,6 +23,7 @@ public class FileSyncApplication {
       .POST("/pull", handler::handlePullFile)
       .GET("/time", handler::handleGetTime)
       .POST("/sync", handler::handleSyncJson)
+      .POST("/wipe", handler::handleWipe)
       .filter((serverRequest, handlerFunction) -> handlerFunction.handle(serverRequest))
       .build();
   }

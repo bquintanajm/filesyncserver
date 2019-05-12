@@ -33,16 +33,15 @@ public abstract class ITBase {
 	@Autowired
 	private ObjectMapper objectMapper;
 	@LocalServerPort
-	protected int port;
+	private int port;
 
 	@BeforeEach
 	public void setUpRestAssured() {
-		RestAssured.given().log().all();
 		RestAssured.baseURI = "https://localhost";
 		RestAssured.basePath = "/";
 		RestAssured.port = port;
 		RestAssured.requestSpecification = new RequestSpecBuilder()
-				.addParam("key", "ABCDEF")
+				.addQueryParam("key", "ABCDEF")
 				.build();
 		RestAssured.config = config()
 				.objectMapperConfig(config().getObjectMapperConfig()
@@ -50,7 +49,6 @@ public abstract class ITBase {
 				.sslConfig(sslConfig()
 						.relaxedHTTPSValidation()
 						.allowAllHostnames());
-
 	}
 
 	String toJson(Object object) {
