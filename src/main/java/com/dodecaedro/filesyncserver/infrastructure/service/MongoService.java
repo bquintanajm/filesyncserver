@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import javax.json.*;
 import java.time.Instant;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -15,17 +16,28 @@ import java.util.stream.Collectors;
 public class MongoService {
 	private final MongoRepository repository;
 
+	private final Function<List<String>, JsonArray> findItemsFunction;
+	private final Function<List<String>, JsonArray> findTagsFunction;
+	private final Function<List<String>, JsonArray> findDeletionsFunction;
+
 	public MongoService(MongoRepository repository) {
 		this.repository = repository;
+
+		findItemsFunction = repository::findItemsById;
+		findTagsFunction = repository::findTagsById;
+		findDeletionsFunction = repository::findDeletionsById;
 	}
 
 	public SyncResponse sync(JsonObject jsonObject) throws OptimisticLockingException {
 		var lastSync = jsonObject.getJsonNumber("last_sync_ts").longValue();
 
+		// process items
 		var items = jsonObject.get("changes").asJsonObject().getJsonArray("items");
-		List<String> itemIds = processItems(items);
+		var itemIds = process(items, findItemsFunction, repository::saveNewItems, repository::updateItems);
 
 		// process tags
+		var tags = jsonObject.get("changes").asJsonObject().getJsonArray("tags");
+		var tagIds = process(tags, findTagsFunction, repository::saveNewTags, repository::updateTags);
 
 		// deletions
 		// 1. add to deletions
@@ -34,6 +46,7 @@ public class MongoService {
 		return SyncResponse.builder()
 				.syncTs(Instant.now().getEpochSecond())
 				.items(repository.findItemsNewerThanExcluding(lastSync, itemIds))
+				.tags(repository.findTagsNewerThanExcluding(lastSync, tagIds))
 				.success(true)
 				.build();
 	}
@@ -58,7 +71,12 @@ public class MongoService {
 		repository.deleteAllDeletions();
 	}
 
-	private List<String> processItems(JsonArray items) throws OptimisticLockingException {
+	private List<String> process(
+			JsonArray items,
+			Function<List<String>, JsonArray> finder,
+			Consumer<JsonArray> saver,
+			Consumer<JsonArray> updater) throws OptimisticLockingException {
+
 		var newItemsToSaveBuilder = Json.createArrayBuilder();
 		var existingItemsToUpdateBuilder = Json.createArrayBuilder();
 
@@ -67,7 +85,7 @@ public class MongoService {
 				.map(JsonValue::toString)
 				.collect(Collectors.toList());
 
-		var existingItemsById = repository.findItemsById(itemIds).stream()
+		var existingItemsById = finder.apply(itemIds).stream()
 				.map(JsonValue::asJsonObject)
 				.collect(Collectors.toMap(object -> object.get("id"), Function.identity()));
 
@@ -87,12 +105,12 @@ public class MongoService {
 
 		var newItemsToSave = newItemsToSaveBuilder.build();
 		if (!newItemsToSave.isEmpty()) {
-			repository.saveNewItems(newItemsToSave);
+			saver.accept(newItemsToSave);
 		}
 
 		var existingItemsToUpdate = existingItemsToUpdateBuilder.build();
 		if (!existingItemsToUpdate.isEmpty()) {
-			repository.updateItems(existingItemsToUpdate);
+			updater.accept(existingItemsToUpdate);
 		}
 
 		return itemIds;

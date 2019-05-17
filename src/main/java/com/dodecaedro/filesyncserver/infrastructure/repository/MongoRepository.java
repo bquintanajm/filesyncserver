@@ -50,9 +50,24 @@ public class MongoRepository {
 		return findInCollectionById(itemsCollection, ids);
 	}
 
+	public JsonArray findTagsById(List<String> ids) {
+		return findInCollectionById(tagsCollection, ids);
+	}
+
+	public JsonArray findDeletionsById(List<String> ids) {
+		return findInCollectionById(deletionsCollection, ids);
+	}
+
 	public JsonArray findItemsNewerThanExcluding(long timestamp, List<String> ids) {
 		JsonArrayBuilder builder = Json.createArrayBuilder();
 		itemsCollection.find().filter(and(gt("changed_ts", timestamp), not(in("id", ids)))).iterator()
+				.forEachRemaining(document -> builder.add(document.toJson()));
+		return builder.build();
+	}
+
+	public JsonArray findTagsNewerThanExcluding(long timestamp, List<String> ids) {
+		JsonArrayBuilder builder = Json.createArrayBuilder();
+		tagsCollection.find().filter(and(gt("changed_ts", timestamp), not(in("id", ids)))).iterator()
 				.forEachRemaining(document -> builder.add(document.toJson()));
 		return builder.build();
 	}
@@ -77,6 +92,20 @@ public class MongoRepository {
 		items.stream()
 				.map(JsonValue::asJsonObject)
 				.forEach(item -> itemsCollection
+						.replaceOne(eq("id", item.getString("id")), Document.parse(item.toString())));
+	}
+
+	public void updateTags(JsonArray items) {
+		items.stream()
+				.map(JsonValue::asJsonObject)
+				.forEach(item -> tagsCollection
+						.replaceOne(eq("id", item.getString("id")), Document.parse(item.toString())));
+	}
+
+	public void updateDeletions(JsonArray items) {
+		items.stream()
+				.map(JsonValue::asJsonObject)
+				.forEach(item -> deletionsCollection
 						.replaceOne(eq("id", item.getString("id")), Document.parse(item.toString())));
 	}
 
