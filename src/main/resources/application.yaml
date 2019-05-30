@@ -1,7 +1,9 @@
 application:
   key: ${api.key}
-  file-path: /data
-  file-name: file
+  mongo-host: ${mongo.host}
+  mongo-port: ${mongo.port}
+  mongo-username: ${mongo.username}
+  mongo-password: ${mongo.password}
 
 server:
  ssl:
@@ -17,8 +19,12 @@ server:
 
 logging:
   level:
-    com.dodecaedro: INFO
+    com.dodecaedro: TRACE
 
 spring:
   main:
     lazy-initialization: true
+  jackson:
+     default-property-inclusion: non_null
+     deserialization:
+       fail-on-unknown-properties: false

@@ -1,6 +1,8 @@
 package com.dodecaedro.filesyncserver;
 
+import com.fasterxml.jackson.datatype.jsr353.JSR353Module;
 import com.mongodb.MongoClientSettings;
+import com.mongodb.MongoCredential;
 import com.mongodb.ServerAddress;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
@@ -18,6 +20,11 @@ public class FileSyncConfiguration {
 	}
 
 	@Bean
+	public JSR353Module jsonModule() {
+		return new JSR353Module();
+	}
+
+	@Bean
 	public MongoClient mongoClient() {
 		return MongoClients.create(
 				MongoClientSettings.builder()
@@ -26,6 +33,11 @@ public class FileSyncConfiguration {
 										properties.getMongoHost(),
 										properties.getMongoPort()
 								))))
+						.credential(MongoCredential.createCredential(
+								properties.getMongoUsername(),
+								"admin",
+								properties.getMongoPassword().toCharArray()
+								))
 						.build());
 	}
 }
