@@ -9,7 +9,7 @@ COPY src src
 RUN ./mvnw install -DskipTests
 RUN mkdir -p target/dependency && (cd target/dependency; jar -xf ../*.jar)
 
-FROM adoptopenjdk/openjdk11-openj9:jre-11.0.3_7_openj9-0.14.0-alpine
+FROM adoptopenjdk/openjdk11-openj9:jre-11.0.3_7_openj9-0.14.3-alpine
 VOLUME /tmp
 ARG DEPENDENCY=/workspace/app/target/dependency
 COPY --from=build ${DEPENDENCY}/BOOT-INF/lib /app/lib

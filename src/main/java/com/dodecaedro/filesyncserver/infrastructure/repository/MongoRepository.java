@@ -1,18 +1,18 @@
 package com.dodecaedro.filesyncserver.infrastructure.repository;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Indexes;
 import lombok.extern.slf4j.Slf4j;
 import org.bson.Document;
 import org.springframework.stereotype.Repository;
 
-import javax.json.*;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonValue;
 import java.io.IOException;
-import java.io.StringReader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
@@ -29,15 +29,12 @@ public class MongoRepository {
 	private final MongoCollection<Document> tagsCollection;
 	private final MongoCollection<Document> deletionsCollection;
 
-	private final MongoClient mongoClient;
-
 	private final ObjectMapper objectMapper;
 
 	public MongoRepository(MongoClient mongoClient, ObjectMapper objectMapper) {
 		this.objectMapper = requireNonNull(objectMapper);
-		this.mongoClient = requireNonNull(mongoClient, "mongo db client cannot be null");
 
-		MongoDatabase database = mongoClient.getDatabase("mydb");
+		var database = mongoClient.getDatabase("jsondb");
 
 		itemsCollection = database.getCollection("items");
 		tagsCollection = database.getCollection("tags");
@@ -74,7 +71,14 @@ public class MongoRepository {
 		return findInCollectionById(tagsCollection, ids);
 	}
 
-	public JsonArray findItemsNewerThanExcluding(long timestamp, List<String> ids) {
+	private List<JsonObject> findInCollectionById(MongoCollection<Document> collection, List<String> ids) {
+		return collection.find()
+				.filter(in("id", ids))
+				.map(this::fromDocument)
+				.into(new ArrayList<>());
+	}
+
+	public JsonArray findItemsNewerThan(long timestamp) {
 		var builder = Json.createArrayBuilder();
 		itemsCollection.find()
 				.filter(or(
@@ -88,7 +92,7 @@ public class MongoRepository {
 		return builder.build();
 	}
 
-	public JsonArray findTagsNewerThanExcluding(long timestamp, List<String> ids) {
+	public JsonArray findTagsNewerThan(long timestamp) {
 		var builder = Json.createArrayBuilder();
 		tagsCollection.find()
 				.filter(or(
@@ -101,7 +105,7 @@ public class MongoRepository {
 		return builder.build();
 	}
 
-	public JsonArray findDeletionsNewerThanExcluding(long timestamp, List<String> ids) {
+	public JsonArray findDeletionsNewerThan(long timestamp) {
 		var builder = Json.createArrayBuilder();
 		deletionsCollection.find()
 				//.filter(and(gt("ts", timestamp), not(in("sync_id", ids))))
@@ -117,37 +121,52 @@ public class MongoRepository {
 			itemsCollection.insertMany(toDocuments(items));
 		}
 	}
+
 	public void saveNewTags(List<JsonObject> tags) {
 		if (tags != null && !tags.isEmpty()) {
 			tagsCollection.insertMany(toDocuments(tags));
 		}
 	}
+
 	public void saveNewDeletions(List<JsonObject> deletions) {
 		if (deletions != null && !deletions.isEmpty()) {
 			deletionsCollection.insertMany(toDocuments(deletions));
 		}
 	}
 
-	public void updateItems(List<JsonObject> items) {
-		if (items == null || items.isEmpty()) {
-			return;
-		}
-
-		items.stream()
-				.map(JsonValue::asJsonObject)
-				.forEach(item -> itemsCollection
-						.replaceOne(eq("id", item.getString("id")), parse(item.toString())));
+	public void updateExistingItems(List<JsonObject> items) {
+		updateInCollection(items, itemsCollection);
 	}
 
-	public void updateTags(List<JsonObject> tags) {
-		if (tags == null || tags.isEmpty()) {
-			return;
+	public void updateExistingTags(List<JsonObject> tags) {
+		updateInCollection(tags, tagsCollection);
+	}
+
+	public void sync(ChangesDto changes) {
+		saveNewItems(changes.getNewItemsToSave());
+		updateExistingItems(changes.getItemsToUpdate());
+
+		saveNewTags(changes.getNewTagsToSave());
+		updateExistingTags(changes.getTagsToUpdate());
+
+		saveNewDeletions(changes.getNewDeletions());
+
+		if (changes.getItemsIdsToDelete() != null && !changes.getItemsIdsToDelete().isEmpty()) {
+			itemsCollection.deleteMany(in("id", changes.getItemsIdsToDelete()));
 		}
 
-		tags.stream()
-				.map(JsonValue::asJsonObject)
-				.forEach(item -> tagsCollection
-						.replaceOne(eq("id", item.getString("id")), parse(item.toString())));
+		if (changes.getTagIdsToDelete() != null && !changes.getTagIdsToDelete().isEmpty()) {
+			tagsCollection.deleteMany(in("id", changes.getTagIdsToDelete()));
+		}
+	}
+
+	private void updateInCollection(List<JsonObject> jsonObjects, MongoCollection<Document> collection) {
+		if (jsonObjects != null && !jsonObjects.isEmpty()) {
+			jsonObjects.stream()
+					.map(JsonValue::asJsonObject)
+					.forEach(item -> itemsCollection
+							.replaceOne(eq("id", item.getString("id")), parse(item.toString())));
+		}
 	}
 
 	public void deleteAllItems() {
@@ -160,47 +179,6 @@ public class MongoRepository {
 
 	public void deleteAllDeletions() {
 		deletionsCollection.deleteMany(new Document());
-	}
-
-	public void deleteItems(List<String> itemIds) {
-		if (itemIds == null || itemIds.isEmpty()) {
-			return;
-		}
-
-		itemsCollection.deleteMany(in("id", itemIds));
-	}
-
-	public void deleteTags(List<String> tagIds) {
-		if (tagIds == null || tagIds.isEmpty()) {
-			return;
-		}
-
-		tagsCollection.deleteMany(in("id", tagIds));
-	}
-
-	public JsonArray findDeletionsById(List<String> deletionIds) {
-		if (deletionIds == null || deletionIds.isEmpty()) {
-			return JsonValue.EMPTY_JSON_ARRAY;
-		}
-
-		if (log.isTraceEnabled()) {
-			log.trace("Count of documents in the deletion collection: {}", deletionsCollection.countDocuments());
-		}
-
-		JsonArrayBuilder builder = Json.createArrayBuilder();
-		deletionsCollection.find()
-				.filter(in("sync_id", deletionIds))
-				.map(this::fromDocument)
-				.forEach((Consumer<JsonObject>) builder::add);
-
-		return builder.build();
-	}
-
-	private List<JsonObject> findInCollectionById(MongoCollection<Document> collection, List<String> ids) {
-		return collection.find()
-				.filter(in("id", ids))
-				.map(this::fromDocument)
-				.into(new ArrayList<>());
 	}
 
 	private JsonArray findAllByCollection(MongoCollection<Document> collection) {
@@ -225,15 +203,5 @@ public class MongoRepository {
 		} catch (IOException e) {
 			return JsonValue.EMPTY_JSON_OBJECT;
 		}
-	}
-
-	private void sync() {
-		try (ClientSession clientSession = mongoClient.startSession()) {
-			clientSession.startTransaction();
-			//collection.insertOne(clientSession, docOne);
-			//collection.insertOne(clientSession, docTwo);
-			clientSession.commitTransaction();
-		}
-
 	}
 }

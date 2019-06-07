@@ -1,35 +1,31 @@
 package com.dodecaedro.filesyncserver.infrastructure.service;
 
-import com.dodecaedro.filesyncserver.domain.model.OptimisticLockingException;
 import com.dodecaedro.filesyncserver.infrastructure.repository.ChangesDto;
 import com.dodecaedro.filesyncserver.infrastructure.repository.MongoRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.json.JsonArray;
-import javax.json.JsonNumber;
 import javax.json.JsonObject;
 import javax.json.JsonValue;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Function;
 
+import static com.dodecaedro.filesyncserver.infrastructure.service.JsonAccessor.getLongValueOrZero;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static javax.json.Json.createArrayBuilder;
 import static javax.json.Json.createObjectBuilder;
 
 @Service
 @Slf4j
 public class FileSyncService {
 	private final MongoRepository repository;
+	private final JsonObjectMerger merger;
 
-	public FileSyncService(MongoRepository repository) {
+	public FileSyncService(MongoRepository repository, JsonObjectMerger merger) {
 		this.repository = repository;
+		this.merger = merger;
 	}
 
 	public JsonObject sync(JsonObject jsonObject) {
@@ -38,53 +34,16 @@ public class FileSyncService {
 			log.trace(jsonObject.toString());
 		}
 
-		var lastSync = 0L;
-		var jsonValue = jsonObject.get("last_sync_ts");
-		if (jsonValue != null && jsonValue.getValueType() == JsonValue.ValueType.NUMBER) {
-			lastSync = ((JsonNumber)jsonValue).longValue();
-		}
+		var lastSync = getLongValueOrZero(jsonObject, "last_sync_ts");
 
 		var updatedTimestamp = Instant.now().getEpochSecond();
 
-		// process tags
 		var tags = jsonObject.get("changes").asJsonObject().getJsonArray("tags").getValuesAs(JsonObject.class);
-		var tagIds = process(tags, repository::findTagsById, repository::saveNewTags, repository::updateTags);
-
-		// process items
 		var items = jsonObject.get("changes").asJsonObject().getJsonArray("items").getValuesAs(JsonObject.class);
-		var itemIds = process(items, repository::findItemsById, repository::saveNewItems, repository::updateItems);
-
-		// deletions
-		// 1. add to deletions
-		// 2. delete from items/tags
 		var deletions = jsonObject.get("changes").asJsonObject().getJsonArray("deletions");
-		processDeletions(deletions);
 
-		var deletedItems = deletions.stream()
-				.map(JsonValue::asJsonObject)
-				.filter(element -> "i".equals(element.getString("entity_type")))
-				.map(element -> element.getString("sync_id"))
-				.collect(toList());
-		repository.deleteItems(deletedItems);
+		var changes = new ChangesDto();
 
-		var deletedTags = deletions.stream()
-				.map(JsonValue::asJsonObject)
-				.filter(jsonObject1 -> "t".equals(jsonObject1.getString("entity_type")))
-				.map(element -> element.getString("sync_id"))
-				.collect(toList());
-		repository.deleteTags(deletedTags);
-
-		// remove tag from items
-
-
-		var deletedSyncIds = deletions.stream()
-				.map(JsonValue::asJsonObject)
-				.map(deletionObject -> deletionObject.getString("sync_id"))
-				.collect(toList());
-
-
-		ChangesDto changes = new ChangesDto();
-/*
 		changes.setNewDeletions(jsonObject.get("changes")
 				.asJsonObject()
 				.getJsonArray("deletions")
@@ -103,15 +62,19 @@ public class FileSyncService {
 				.filter(jsonObject1 -> "t".equals(jsonObject1.getString("entity_type")))
 				.map(element -> element.getString("sync_id"))
 				.collect(toList()));
- */
 
-		JsonObject response = createObjectBuilder()
+		addItemsToDto(items, changes);
+		addTagsToDto(tags, changes);
+
+		repository.sync(changes);
+
+		var response = createObjectBuilder()
 				.add("sync_ts", updatedTimestamp)
-				.add("items", repository.findItemsNewerThanExcluding(lastSync, itemIds))
-				.add("tags", repository.findTagsNewerThanExcluding(lastSync, tagIds))
-				.add("deletions_to_add", repository.findDeletionsNewerThanExcluding(lastSync, deletedSyncIds))
+				.add("items", repository.findItemsNewerThan(lastSync))
+				.add("tags", repository.findTagsNewerThan(lastSync))
+				.add("deletions_to_add", repository.findDeletionsNewerThan(lastSync))
 				.add("success", true)
-				.add("time_delta_ms", jsonObject.getJsonNumber("time_delta_ms").longValue())
+				.add("time_delta_ms", getLongValueOrZero(jsonObject, "time_delta_ms"))
 				.build();
 
 		if (log.isTraceEnabled()) {
@@ -122,7 +85,7 @@ public class FileSyncService {
 		return response;
 	}
 
-	private void addTagsToDto(ChangesDto changes, JsonArray tags) {
+	private void addTagsToDto(List<JsonObject> tags, ChangesDto changes) {
 		var tagIds = tags.stream()
 				.map(JsonValue::asJsonObject)
 				.map(jsonObject -> jsonObject.getString("id"))
@@ -135,22 +98,19 @@ public class FileSyncService {
 		tags.stream()
 				.map(JsonValue::asJsonObject)
 				.forEach(tag -> {
-					JsonObject existingTag = existingTagsById.get(tag.getString("id"));
-					if (existingTag != null) {
-						if (existingTag.getJsonNumber("changed_ts").longValue()
-								> tag.getJsonNumber("changed_ts").longValue()) {
-							log.error("Trying to overwrite a tag with title {} with an older version",
-									existingTag.getString("title"));
-							throw new OptimisticLockingException();
+							existingTagsById.computeIfPresent(tag.getString("id"),
+									(key, jsonObject) -> merger.mergeTag(tag, jsonObject));
+							existingTagsById.computeIfAbsent(tag.getString("id"), key -> {
+								changes.getNewTagsToSave().add(tag);
+								return null;
+							});
 						}
-						changes.getTagsToUpdate().add(tag);
-					} else {
-						changes.getNewTagsToSave().add(tag);
-					}
-				});
+				);
+
+		changes.getTagsToUpdate().addAll(existingTagsById.values());
 	}
 
-	private void addItemsToDto(ChangesDto changes, JsonArray items) {
+	private void addItemsToDto(List<JsonObject> items, ChangesDto changes) {
 		var itemIds = items.stream()
 				.map(JsonValue::asJsonObject)
 				.map(jsonObject -> jsonObject.getString("id"))
@@ -163,21 +123,17 @@ public class FileSyncService {
 		items.stream()
 				.map(JsonValue::asJsonObject)
 				.forEach(item -> {
-					JsonObject existingItem = existingItemsById.get(item.getString("id"));
-					if (existingItem != null) {
-						if (existingItem.getJsonNumber("changed_ts").longValue()
-								> item.getJsonNumber("changed_ts").longValue()) {
-							log.error("Trying to overwrite an item with title {} with an older version",
-									existingItem.getString("title"));
-							throw new OptimisticLockingException();
+							existingItemsById.computeIfPresent(item.getString("id"),
+									(key, jsonObject) -> merger.mergeItem(item, jsonObject));
+							existingItemsById.computeIfAbsent(item.getString("id"), key -> {
+								changes.getNewItemsToSave().add(item);
+								return null;
+							});
 						}
-						changes.getItemsToUpdate().add(item);
-					} else {
-						changes.getNewItemsToSave().add(item);
-					}
-				});
-	}
+				);
 
+		changes.getItemsToUpdate().addAll(existingItemsById.values());
+	}
 
 	public JsonObject findAllItemsTagsAndDeletions() {
 		return createObjectBuilder()
@@ -202,63 +158,5 @@ public class FileSyncService {
 		repository.deleteAllItems();
 		repository.deleteAllTags();
 		repository.deleteAllDeletions();
-	}
-
-	private List<String> process(
-			List<JsonObject> items,
-			Function<List<String>, List<JsonObject>> finder,
-			Consumer<List<JsonObject>> saver,
-			Consumer<List<JsonObject>> updater) throws OptimisticLockingException {
-
-		List<JsonObject> newItemsToSave = new ArrayList<>();
-		List<JsonObject> existingItemsToUpdate = new ArrayList<>();
-
-		var itemIds = items.stream()
-				.map(JsonValue::asJsonObject)
-				.map(jsonObject -> jsonObject.getString("id"))
-				.collect(toList());
-
-		var existingItemsById = finder.apply(itemIds).stream()
-				.map(JsonValue::asJsonObject)
-				.collect(toMap(object -> object.getString("id"), identity()));
-
-		for (JsonValue item : items) {
-			var itemObject = item.asJsonObject();
-			var existingItem = existingItemsById.get(itemObject.getString("id"));
-			if (existingItem != null) {
-				if (itemObject.getInt("changed_ts") < existingItem.getInt("changed_ts")) {
-					log.error("Trying to overwrite the item with title {} with an older version",
-							existingItem.getString("title"));
-					throw new OptimisticLockingException();
-				}
-				existingItemsToUpdate.add(itemObject);
-			} else {
-				newItemsToSave.add(itemObject);
-			}
-		}
-
-		saver.accept(newItemsToSave);
-		updater.accept(existingItemsToUpdate);
-
-		return itemIds;
-	}
-
-	private void processDeletions(JsonArray deletions) {
-		var deletedElementsIds = deletions.stream()
-				.map(JsonValue::asJsonObject)
-				.map(element -> element.getString("sync_id"))
-				.collect(toList());
-
-		var existingDeletionsById = repository.findDeletionsById(deletedElementsIds).stream()
-				.map(JsonValue::asJsonObject)
-				.collect(toMap(object -> object.getString("sync_id"), identity()));
-
-		// ignore already deleted elements
-		var elementsToDelete = deletions.stream()
-				.map(JsonValue::asJsonObject)
-				.filter(jsonObject -> !existingDeletionsById.containsKey(jsonObject.getString("sync_id")))
-				.collect(toList());
-
-		repository.saveNewDeletions(elementsToDelete);
 	}
 }

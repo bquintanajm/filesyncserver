@@ -1,0 +1,19 @@
+version: '3'
+services:
+  mongo:
+    image: "mongo:4.1.13"
+    ports:
+      - "27017:27017"
+    command: --profile=1 --slowms=0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: 'root'
+      MONGO_INITDB_ROOT_PASSWORD: 'mypassword'
+  mongo-express:
+    image: "mongo-express:0.49.0"
+    ports:
+      - "8081:8081"
+    depends_on:
+      - mongo
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: 'root'
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 'mypassword'

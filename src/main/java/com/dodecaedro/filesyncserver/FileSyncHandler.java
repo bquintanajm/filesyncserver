@@ -8,9 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.function.ServerRequest;
 import org.springframework.web.servlet.function.ServerResponse;
 
-import javax.json.Json;
 import javax.json.JsonObject;
-import java.io.IOException;
 import java.time.Instant;
 
 import static org.springframework.web.servlet.function.ServerResponse.ok;

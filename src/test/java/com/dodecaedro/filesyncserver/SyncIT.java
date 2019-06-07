@@ -250,7 +250,7 @@ public class SyncIT extends ITBase {
 					.collect(toList());
 			softly.assertThat(itemIds)
 					.containsExactlyInAnyOrder(
-							"CE18D30F61E44C2FA6C1F6FA8024E407", "12B7DA5E9EC146B493056384EA89E55D"
+							"CE18D30F61E44C2FA6C1F6FA8024E407", "12B7DA5E9EC146B493056384EA89E55D", "AA56D30F61E44C2FA6C1F6FA8024A001"
 					);
 
 			// AND all the previously existing tags are returned in the response
