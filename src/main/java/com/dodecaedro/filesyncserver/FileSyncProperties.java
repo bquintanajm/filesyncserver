@@ -14,7 +14,7 @@ public class FileSyncProperties {
   @NotBlank
   private String key;
   @NotEmpty
-	private String mongoHost = "mongo";
+	private String mongoHost = "db";
 	private int mongoPort = 27017;
 	@NotEmpty
 	private String mongoUsername;
