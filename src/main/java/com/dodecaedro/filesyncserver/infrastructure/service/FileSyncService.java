@@ -68,6 +68,7 @@ public class FileSyncService {
 
 		repository.sync(changes);
 
+		// optimization: don't include in the response those elements sent
 		var response = createObjectBuilder()
 				.add("sync_ts", updatedTimestamp)
 				.add("items", repository.findItemsNewerThan(lastSync))

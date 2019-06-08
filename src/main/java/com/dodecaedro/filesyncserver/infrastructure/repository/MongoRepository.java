@@ -41,6 +41,7 @@ public class MongoRepository {
 		deletionsCollection = database.getCollection("deletion");
 
 		itemsCollection.createIndex(Indexes.ascending("id"));
+		tagsCollection.createIndex(Indexes.ascending("id"));
 	}
 
 	public JsonArray findAllItems() {

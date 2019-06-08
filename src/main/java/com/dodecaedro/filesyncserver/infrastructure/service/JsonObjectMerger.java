@@ -17,6 +17,7 @@ public class JsonObjectMerger {
 		var builder = Json.createObjectBuilder();
 		base.forEach(builder::add);
 
+		// there are probably more fields that can be merged
 		builder.add("title", getMostRecentOfByKey(one, another, "title", "title_ts"));
 		builder.add("completed_on", getMostRecentOfByKey(one, another, "completed_on", "completed_on_ts"));
 		builder.add("due_date", getMostRecentOfByKey(one, another, "due_date", "due_date_ts"));
