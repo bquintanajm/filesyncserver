@@ -1,7 +1,7 @@
 application:
   key: ${api.key}
-  mongo-host: ${mongo.host}
-  mongo-port: ${mongo.port}
+  mongo-host: ${mongo.host:db}
+  mongo-port: ${mongo.port:27017}
   mongo-username: ${mongo.username}
   mongo-password: ${mongo.password}
 
