@@ -22,7 +22,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <java.version>11</java.version>
-    <dockerfile-maven-version>1.4.8</dockerfile-maven-version>
+    <dockerfile-maven-version>1.4.10</dockerfile-maven-version>
   </properties>
 
   <dependencies>
