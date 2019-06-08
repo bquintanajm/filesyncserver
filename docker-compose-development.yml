@@ -1,19 +1,24 @@
-version: '3'
+# Use root/example as user/password credentials
+version: '3.1'
+
 services:
   mongo:
-    image: "mongo:4.1.13"
+    image: mongo:4.1.13
+    restart: always
     ports:
-      - "27017:27017"
+      - 27017:27017
     command: --profile=1 --slowms=0
     environment:
-      MONGO_INITDB_ROOT_USERNAME: 'root'
-      MONGO_INITDB_ROOT_PASSWORD: 'mypassword'
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: example
+
   mongo-express:
-    image: "mongo-express:0.49.0"
-    ports:
-      - "8081:8081"
+    image: mongo-express:0.49.0
     depends_on:
       - mongo
+    restart: always
+    ports:
+      - 8081:8081
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: 'root'
-      ME_CONFIG_MONGODB_ADMINPASSWORD: 'mypassword'
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: example
