@@ -1,3 +1,7 @@
+# Deprecated
+This repository is deprecated now. The development continues in [Json Sync Server](https://github.com/jbequinn/jsonsyncserver)
+
+
 # filesyncserver
 File synchronization service for systems like [Everdo](https://everdo.net/)
 
